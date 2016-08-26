@@ -211,6 +211,7 @@ class ControllerModulePvnmParser extends Controller {
 
 		$this->load->model('module/pvnm_parser');
 		$this->load->model('catalog/attribute');
+		$this->load->model('catalog/manufacturer');
 
 		$json = array();
 
@@ -248,6 +249,14 @@ class ControllerModulePvnmParser extends Controller {
 				$found_products = $this->model_module_pvnm_parser->getFoundProduct($filter_data);
 
 				foreach ($found_products as $product) {
+					$model = '';
+					$manufacturer_id = 0;
+					$price = 0;
+					$image = '';
+					$description = '';
+					$product_image = array();
+					$product_attribute = array();
+
 					$ch = curl_init();
 					curl_setopt($ch, CURLOPT_URL, $product['url']);
 					curl_setopt($ch, CURLOPT_POST, 0);
@@ -267,16 +276,12 @@ class ControllerModulePvnmParser extends Controller {
 
 					if (isset($description[1][0])) {
 						$description = $description[1][0];
-					} else {
-						$description = '';
 					}
 
 					$price = $saw->get('.js-price-display')->toArray();
 
 					if (isset($price[0]['#text'][1])) {
 						$price = $price[0]['#text'][1];
-					} else {
-						$price = 0;
 					}
 
 					$image = $saw->get('.js-product-primary-image')->toArray();
@@ -285,20 +290,17 @@ class ControllerModulePvnmParser extends Controller {
 						$image = $image[0]['data-zoom-image'];
 					} elseif (isset($image[0]['src']) && !empty($image[0]['src'])) {
 						$image = mb_substr($image[0]['src'], 0, strpos($image[0]['src'], '?odnHeight'));
-					} else {
-						$image = '';
 					}
-
-					//$product_image = array();
 
 					//foreach ($saw->get('.js-product-thumb') as $key => $link) {
 					//	$product_image[] = 'https://www.walmart.com' . $link['href'];
 					//}
 
-					$product_attribute = array();
-
-					// Add attributes to opencart
 					foreach ($saw->get('.js-product-specs-row td:first-child') as $key => $link) {
+						if ($link['#text'][0] == 'Brand:') {
+							$manufacturer = $key;
+						}
+
 						$attribute_description[$this->config->get('config_language_id')]['name'] = $link['#text'][0];
 
 						$filter_data = array(
@@ -320,6 +322,7 @@ class ControllerModulePvnmParser extends Controller {
 								'sort_order'			=> ''
 							);
 
+							// Add attributes to opencart
 							$attribute_id = $this->model_catalog_attribute->addAttribute($attribute_data);
 						}
 
@@ -328,21 +331,51 @@ class ControllerModulePvnmParser extends Controller {
 						);
 					}
 
-					// Add attributes with values to temporary product
 					foreach ($saw->get('.js-product-specs-row td:last-child') as $key => $link) {
+						// Add manufacturer to temporary product
+						if (isset($manufacturer) && $key == $manufacturer) {
+							$manufacturer = trim($link['#text'][0]);
+
+							// Serching manufacturer in database
+							$filter_data = array(
+								'filter_name'					=> $manufacturer,
+								'start'							=> 0,
+								'limit'							=> 1
+							);
+
+							$manufacturers = $this->model_catalog_manufacturer->getManufacturers($filter_data);
+
+							if (!empty($manufacturers)) {
+								$manufacturer_id = $manufacturers[0]['manufacturer_id'];
+							} else {
+								$manufacturer_data = array(
+									'name'					=> $manufacturer,
+									'sort_order'			=> '',
+									'manufacturer_store'	=> array(0),
+									'keyword'				=> $this->translit($manufacturer)
+								);
+
+								// Add manufacturer to opencart
+								$manufacturer_id = $this->model_catalog_manufacturer->addManufacturer($manufacturer_data);
+							}
+						}
+
 						$product_attribute_description[$this->config->get('config_language_id')]['text'] = $link['#text'][0];
 
+						// Add attributes with values to temporary product
 						$product_attribute[$key]['product_attribute_description'][$this->config->get('config_language_id')]['text'] = $link['#text'][0];
 					}
 
 					if ($name) {
 						$product_data = array(
 							'product_id'		=> $product['product_id'],
-							'name'				=> trim(str_replace('"', '&quot;', $name[0]['#text'][0])),
-							'description'		=> $description,
+							'model'				=> $model,
+							'manufacturer_id'	=> $manufacturer_id,
 							'price'				=> $price,
 							'image'				=> $image,
-							//'product_image'	=> $product_image,
+							'name'				=> trim(str_replace('"', '&quot;', $name[0]['#text'][0])),
+							'description'		=> $description,
+							'product_image'		=> $product_image,
 							'product_attribute'	=> $product_attribute
 						);
 
@@ -443,7 +476,7 @@ class ControllerModulePvnmParser extends Controller {
 					$product_attributes = $this->model_module_pvnm_parser->getProductAttributes($product['product_id']);
 
 					$product_data = array(
-						'model'					=> $product['product_id'], 
+						'model'					=> $product['model'], 
 						'sku'					=> '',
 						'upc'					=> '',
 						'ean'					=> '',
@@ -456,7 +489,7 @@ class ControllerModulePvnmParser extends Controller {
 						'subtract'				=> 1,
 						'stock_status_id'		=> 5,
 						'date_available'		=> date('Y-m-d'),
-						'manufacturer_id'		=> 0,
+						'manufacturer_id'		=> $product['manufacturer_id'], 
 						'shipping'				=> 1,
 						'price'					=> $product['price'],
 						'points'				=> 0,
@@ -476,7 +509,7 @@ class ControllerModulePvnmParser extends Controller {
 						'product_category'		=> array($product['category_id'])
 					);
 
-					// Add opencart product
+					// Add product to opencart
 					$this->model_catalog_product->addProduct($product_data);
 
 					$this->model_module_pvnm_parser->updateFoundProductStatus($product['product_id'], 2);

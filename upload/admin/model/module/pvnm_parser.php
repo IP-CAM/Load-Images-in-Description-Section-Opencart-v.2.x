@@ -5,7 +5,15 @@ class ModelModulePvnmParser extends Model {
 	}
 
 	public function updateFoundProduct($data = array()) {
-		$this->db->query("UPDATE " . DB_PREFIX . "pvnm_parser_product SET image = '" . $this->db->escape($data['image']) . "', name = '" . $this->db->escape($data['name']) . "', description = '" . $this->db->escape($data['description']) . "', price = '" . $this->db->escape($data['price']) . "', status = 1 WHERE product_id = '" . (int)$data['product_id'] . "'");
+		$this->db->query("UPDATE " . DB_PREFIX . "pvnm_parser_product SET 
+			model = '" . $this->db->escape($data['model']) . "', 
+			manufacturer_id = '" . (int)$data['manufacturer_id'] . "', 
+			price = '" . $this->db->escape($data['price']) . "', 
+			image = '" . $this->db->escape($data['image']) . "', 
+			name = '" . $this->db->escape($data['name']) . "', 
+			description = '" . $this->db->escape($data['description']) . "', 
+			status = 1 
+		WHERE product_id = '" . (int)$data['product_id'] . "'");
 
 		if (isset($data['product_attribute'])) {
 			foreach ($data['product_attribute'] as $product_attribute) {
