@@ -102,8 +102,8 @@ class ControllerModulePvnmParser extends Controller {
 		}
 
 		$filter_data = array(
-			'sort'		=> 'sort_order',
-			'order'		=> 'ASC'
+			'sort'	=> 'sort_order',
+			'order'	=> 'ASC'
 		);
 
 		$data['token'] = $this->session->data['token'];
@@ -226,14 +226,14 @@ class ControllerModulePvnmParser extends Controller {
 
 			$filter_data = array(
 				'filter_category_id'	=> $category_id,
-				'filter_status'				=> 1
+				'filter_status'			=> 1
 			);
 
 			$category_parse_products = $this->model_module_pvnm_parser->getTotalProduct($filter_data);
 
 			$filter_data = array(
 				'filter_category_id'	=> $category_id,
-				'filter_status'				=> 0
+				'filter_status'			=> 0
 			);
 
 			$category_found_products = $this->model_module_pvnm_parser->getTotalProduct($filter_data);
@@ -241,8 +241,8 @@ class ControllerModulePvnmParser extends Controller {
 			if ($limit > $category_parse_products && $category_found_products > 0) {
 				$filter_data = array(
 					'filter_category_id'	=> $category_id,
-					'filter_status'				=> 0,
-					'limit'								=> 1
+					'filter_status'			=> 0,
+					'limit'					=> 1
 				);
 
 				$found_products = $this->model_module_pvnm_parser->getFoundProduct($filter_data);
@@ -281,8 +281,10 @@ class ControllerModulePvnmParser extends Controller {
 
 					$image = $saw->get('.js-product-primary-image')->toArray();
 
-					if (isset($image[0]['data-zoom-image'])) {
+					if (isset($image[0]['data-zoom-image']) && !empty($image[0]['data-zoom-image'])) {
 						$image = $image[0]['data-zoom-image'];
+					} elseif (isset($image[0]['src']) && !empty($image[0]['src'])) {
+						$image = mb_substr($image[0]['src'], 0, strpos($image[0]['src'], '?odnHeight'));
 					} else {
 						$image = '';
 					}
@@ -301,14 +303,14 @@ class ControllerModulePvnmParser extends Controller {
 
 						$attribute_data = array(
 							'attribute_description'	=> $attribute_description,
-							'attribute_group_id'		=> $attribute_group_id,
-							'sort_order'						=> ''
+							'attribute_group_id'	=> $attribute_group_id,
+							'sort_order'			=> ''
 						);
 
 						$attribute_id = $this->model_catalog_attribute->addAttribute($attribute_data);
 
 						$product_attribute[$key] = array(
-							'attribute_id'					=> $attribute_id
+							'attribute_id'	=> $attribute_id
 						);
 					}
 
@@ -321,12 +323,12 @@ class ControllerModulePvnmParser extends Controller {
 
 					if ($name) {
 						$product_data = array(
-							'product_id'				=> $product['product_id'],
-							'name'							=> trim(str_replace('"', '&quot;', $name[0]['#text'][0])),
-							'description'				=> $description,
-							'price'							=> $price,
-							'image'							=> $image,
-							//'product_image'			=> $product_image,
+							'product_id'		=> $product['product_id'],
+							'name'				=> trim(str_replace('"', '&quot;', $name[0]['#text'][0])),
+							'description'		=> $description,
+							'price'				=> $price,
+							'image'				=> $image,
+							//'product_image'	=> $product_image,
 							'product_attribute'	=> $product_attribute
 						);
 
@@ -379,8 +381,8 @@ class ControllerModulePvnmParser extends Controller {
 			$next = $this->request->post['next'];
 
 			$filter_data = array(
-				'filter_status'				=> 1,
-				'limit'								=> 1
+				'filter_status'	=> 1,
+				'limit'			=> 1
 			);
 
 			$load_products = $this->model_module_pvnm_parser->getFoundProduct($filter_data);
@@ -416,48 +418,48 @@ class ControllerModulePvnmParser extends Controller {
 					}
 
 					$product_description[$this->config->get('config_language_id')] = array(
-						'name'							=> $product['name'],
-						'description'				=> $product['description'],
-						'tag'								=> '',
-						'meta_title'				=> $product['name'],
+						'name'				=> $product['name'],
+						'description'		=> $product['description'],
+						'tag'				=> '',
+						'meta_title'		=> $product['name'],
 						'meta_description'	=> '',
-						'meta_keyword'			=> ''
+						'meta_keyword'		=> ''
 					);
 
 					$product_attributes = $this->model_module_pvnm_parser->getProductAttributes($product['product_id']);
 
 					$product_data = array(
-						'model'										=> $product['product_id'], 
-						'sku'											=> '',
-						'upc'											=> '',
-						'ean'											=> '',
-						'jan'											=> '',
-						'isbn'										=> '',
-						'mpn'											=> '',
-						'location'								=> '',
-						'quantity'								=> 1,
-						'minimum'									=> 1,
-						'subtract'								=> 1,
-						'stock_status_id'					=> 5,
-						'date_available'					=> date('Y-m-d'),
-						'manufacturer_id'					=> 0,
-						'shipping'								=> 1,
-						'price'										=> $product['price'],
-						'points'									=> 0,
-						'weight'									=> 0,
-						'weight_class_id'					=> 1,
-						'length'									=> 0,
-						'width'										=> 0,
-						'height'									=> 0,
-						'length_class_id'					=> 1,
-						'status'									=> 1,
-						'tax_class_id'						=> 0,
-						'sort_order'							=> 0,
-						'image'										=> $image,
-						'product_description'			=> $product_description,
-						'product_store'						=> array(0),
-						'product_attribute'				=> $product_attributes,
-						'product_category'				=> array($product['category_id'])
+						'model'					=> $product['product_id'], 
+						'sku'					=> '',
+						'upc'					=> '',
+						'ean'					=> '',
+						'jan'					=> '',
+						'isbn'					=> '',
+						'mpn'					=> '',
+						'location'				=> '',
+						'quantity'				=> 100,
+						'minimum'				=> 1,
+						'subtract'				=> 1,
+						'stock_status_id'		=> 5,
+						'date_available'		=> date('Y-m-d'),
+						'manufacturer_id'		=> 0,
+						'shipping'				=> 1,
+						'price'					=> $product['price'],
+						'points'				=> 0,
+						'weight'				=> 0,
+						'weight_class_id'		=> 1,
+						'length'				=> 0,
+						'width'					=> 0,
+						'height'				=> 0,
+						'length_class_id'		=> 1,
+						'status'				=> 1,
+						'tax_class_id'			=> 0,
+						'sort_order'			=> 0,
+						'image'					=> $image,
+						'product_description'	=> $product_description,
+						'product_store'			=> array(0),
+						'product_attribute'		=> $product_attributes,
+						'product_category'		=> array($product['category_id'])
 					);
 
 					// Add opencart product
@@ -498,8 +500,8 @@ class ControllerModulePvnmParser extends Controller {
 
 	protected function translit($str) {
 		$replace = array(
-			"А"=>"a",			"а"=>"a",			" "=>"_",			"$"=>"_",
-			"Б"=>"b",			"б"=>"b",			"."=>"_",			"&amp;"=>"_",
+			"А"=>"a",			"а"=>"a",			" "=>"_",
+			"Б"=>"b",			"б"=>"b",			"."=>"_",
 			"В"=>"v",			"в"=>"v",			"/"=>"_",
 			"Г"=>"g",			"г"=>"g",			","=>"_",
 			"Д"=>"d",			"д"=>"d",			"-"=>"_",
@@ -521,44 +523,47 @@ class ControllerModulePvnmParser extends Controller {
 			"У"=>"u",			"у"=>"u",			";"=>"_",
 			"Ф"=>"f",			"ф"=>"f",			"№"=>"_",
 			"Х"=>"h",			"х"=>"h",			"^"=>"_",
-			"Ц"=>"ts",		"ц"=>"ts",		":"=>"_",
-			"Ч"=>"ch",		"ч"=>"ch",		"~"=>"_",
-			"Ш"=>"sh",		"ш"=>"sh",		"\\"=>"_",
-			"Щ"=>"sch",		"щ"=>"sch",		"Ґ"=>"G",
+			"Ц"=>"ts",			"ц"=>"ts",			":"=>"_",
+			"Ч"=>"ch",			"ч"=>"ch",			"~"=>"_",
+			"Ш"=>"sh",			"ш"=>"sh",			"\\"=>"_",
+			"Щ"=>"sch",			"щ"=>"sch",			"Ґ"=>"G",
 			"Ъ"=>"",			"ъ"=>"y",			"є"=>"e",
 			"Ы"=>"i",			"ы"=>"i",			"Є"=>"E",
 			"Ь"=>"j",			"ь"=>"j",			"і"=>"i",
 			"Э"=>"e",			"э"=>"e",			"І"=>"I",
-			"Ю"=>"yu",		"ю"=>"yu",		"ї"=>"i",
-			"Я"=>"ya",		"я"=>"ya",		"Ї"=>"I"
+			"Ю"=>"yu",			"ю"=>"yu",			"ї"=>"i",
+			"Я"=>"ya",			"я"=>"ya",			"Ї"=>"I",
+			"$"=>"_",			"&amp;"=>"_",		"__"=>"_"
 		);
 
-		return strtr($str, $replace);
+		$new_str = strtr($str, $replace);
+
+		return strtr($new_str, $replace);
 	}
 
 	protected function validate() {
 		if (!$this->user->hasPermission('modify', 'module/pvnm_parser')) {
-				$this->error['warning'] = $this->language->get('error_permission');
+			$this->error['warning'] = $this->language->get('error_permission');
 		}
 
 		return !$this->error;
 	}
 
 	public function install() {
-			$this->load->model('module/pvnm_parser');
+		$this->load->model('module/pvnm_parser');
 
-			$this->model_module_pvnm_parser->install();
+		$this->model_module_pvnm_parser->install();
 	}
 
 	public function truncate() {
-			$this->load->model('module/pvnm_parser');
+		$this->load->model('module/pvnm_parser');
 
-			$this->model_module_pvnm_parser->truncate();
+		$this->model_module_pvnm_parser->truncate();
 	}
 
 	public function uninstall() {
-			$this->load->model('module/pvnm_parser');
+		$this->load->model('module/pvnm_parser');
 
-			$this->model_module_pvnm_parser->uninstall();
+		$this->model_module_pvnm_parser->uninstall();
 	}
 }
