@@ -405,11 +405,11 @@ class ControllerModulePvnmParser extends Controller {
 				foreach ($load_products as $product) {
 					// Load images to opencart
 					if (isset($product['image']) && $product['image'] != '') {
-						if (!is_dir(DIR_IMAGE . 'pvnm_parser')) {
-							mkdir(DIR_IMAGE . 'pvnm_parser', 0700);
+						if (!is_dir(DIR_IMAGE . 'catalog/pvnm_parser')) {
+							mkdir(DIR_IMAGE . 'catalog/pvnm_parser', 0700);
 						}
 
-						$pre_url = 'pvnm_parser/' . mb_substr($this->translit($product['name']), 0, 100) . '/';
+						$pre_url = 'catalog/pvnm_parser/' . mb_substr($this->translit($product['name']), 0, 100) . '/';
 
 						if (!is_dir(DIR_IMAGE . $pre_url)) {
 							mkdir(DIR_IMAGE . $pre_url, 0700);
