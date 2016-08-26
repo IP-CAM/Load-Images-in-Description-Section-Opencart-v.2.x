@@ -297,17 +297,31 @@ class ControllerModulePvnmParser extends Controller {
 
 					$product_attribute = array();
 
-					// Add attributes to db
+					// Add attributes to opencart
 					foreach ($saw->get('.js-product-specs-row td:first-child') as $key => $link) {
 						$attribute_description[$this->config->get('config_language_id')]['name'] = $link['#text'][0];
 
-						$attribute_data = array(
-							'attribute_description'	=> $attribute_description,
-							'attribute_group_id'	=> $attribute_group_id,
-							'sort_order'			=> ''
+						$filter_data = array(
+							'filter_name'					=> $link['#text'][0],
+							'filter_attribute_group_id'		=> $attribute_group_id,
+							'start'							=> 0,
+							'limit'							=> 1
 						);
 
-						$attribute_id = $this->model_catalog_attribute->addAttribute($attribute_data);
+						// Serching attribute in database
+						$attributes = $this->model_catalog_attribute->getAttributesByAttributeGroupId($filter_data);
+
+						if (!empty($attributes)) {
+							$attribute_id = $attributes[0]['attribute_id'];
+						} else {
+							$attribute_data = array(
+								'attribute_description'	=> $attribute_description,
+								'attribute_group_id'	=> $attribute_group_id,
+								'sort_order'			=> ''
+							);
+
+							$attribute_id = $this->model_catalog_attribute->addAttribute($attribute_data);
+						}
 
 						$product_attribute[$key] = array(
 							'attribute_id'	=> $attribute_id
