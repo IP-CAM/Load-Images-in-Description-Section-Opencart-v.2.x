@@ -297,6 +297,10 @@ class ControllerModulePvnmParser extends Controller {
 					//}
 
 					foreach ($saw->get('.js-product-specs-row td:first-child') as $key => $link) {
+						if ($link['#text'][0] == 'Manufacturer Part Number:') {
+							$model_number = $key;
+						}
+
 						if ($link['#text'][0] == 'Brand:') {
 							$manufacturer = $key;
 						}
@@ -332,6 +336,11 @@ class ControllerModulePvnmParser extends Controller {
 					}
 
 					foreach ($saw->get('.js-product-specs-row td:last-child') as $key => $link) {
+						// Add model to temporary product
+						if (isset($model_number) && $key == $model_number) {
+							$model = trim($link['#text'][0]);
+						}
+
 						// Add manufacturer to temporary product
 						if (isset($manufacturer) && $key == $manufacturer) {
 							$manufacturer = trim($link['#text'][0]);
