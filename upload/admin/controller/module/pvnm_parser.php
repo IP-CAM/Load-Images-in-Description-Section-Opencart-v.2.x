@@ -284,6 +284,36 @@ class ControllerModulePvnmParser extends Controller {
 						$price = $price[0]['#text'][1];
 					}
 
+					$manufacturer = $saw->get('#WMItemBrandLnk span')->toArray();
+
+					// Add manufacturer to temporary product
+					if (isset($manufacturer[0]['#text'][0])) {
+						$manufacturer = trim($manufacturer[0]['#text'][0]);
+
+						$filter_data = array(
+							'filter_name'					=> $manufacturer,
+							'start'							=> 0,
+							'limit'							=> 1
+						);
+
+						// Serching manufacturer in database
+						$manufacturers = $this->model_catalog_manufacturer->getManufacturers($filter_data);
+
+						if (!empty($manufacturers)) {
+							$manufacturer_id = $manufacturers[0]['manufacturer_id'];
+						} else {
+							$manufacturer_data = array(
+								'name'					=> $manufacturer,
+								'sort_order'			=> '',
+								'manufacturer_store'	=> array(0),
+								'keyword'				=> $this->translit(mb_strtolower($manufacturer))
+							);
+
+							// Add manufacturer to opencart
+							$manufacturer_id = $this->model_catalog_manufacturer->addManufacturer($manufacturer_data);
+						}
+					}
+
 					$image = $saw->get('.js-product-primary-image')->toArray();
 
 					if (isset($image[0]['data-zoom-image']) && !empty($image[0]['data-zoom-image'])) {
@@ -299,10 +329,6 @@ class ControllerModulePvnmParser extends Controller {
 					foreach ($saw->get('.js-product-specs-row td:first-child') as $key => $link) {
 						if ($link['#text'][0] == 'Manufacturer Part Number:') {
 							$model_number = $key;
-						}
-
-						if ($link['#text'][0] == 'Brand:') {
-							$manufacturer = $key;
 						}
 
 						$attribute_description[$this->config->get('config_language_id')]['name'] = $link['#text'][0];
@@ -339,34 +365,6 @@ class ControllerModulePvnmParser extends Controller {
 						// Add model to temporary product
 						if (isset($model_number) && $key == $model_number) {
 							$model = trim($link['#text'][0]);
-						}
-
-						// Add manufacturer to temporary product
-						if (isset($manufacturer) && $key == $manufacturer) {
-							$manufacturer = trim($link['#text'][0]);
-
-							// Serching manufacturer in database
-							$filter_data = array(
-								'filter_name'					=> $manufacturer,
-								'start'							=> 0,
-								'limit'							=> 1
-							);
-
-							$manufacturers = $this->model_catalog_manufacturer->getManufacturers($filter_data);
-
-							if (!empty($manufacturers)) {
-								$manufacturer_id = $manufacturers[0]['manufacturer_id'];
-							} else {
-								$manufacturer_data = array(
-									'name'					=> $manufacturer,
-									'sort_order'			=> '',
-									'manufacturer_store'	=> array(0),
-									'keyword'				=> $this->translit($manufacturer)
-								);
-
-								// Add manufacturer to opencart
-								$manufacturer_id = $this->model_catalog_manufacturer->addManufacturer($manufacturer_data);
-							}
 						}
 
 						$product_attribute_description[$this->config->get('config_language_id')]['text'] = $link['#text'][0];
