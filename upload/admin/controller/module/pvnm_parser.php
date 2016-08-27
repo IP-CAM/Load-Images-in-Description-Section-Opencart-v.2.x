@@ -142,17 +142,7 @@ class ControllerModulePvnmParser extends Controller {
 				$url = $categories[$next]['url'] . '&page=' . $page ;
 			}
 
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $url);
-			curl_setopt($ch, CURLOPT_POST, 0);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-			curl_setopt($ch, CURLOPT_HEADER, 0);
-			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.8');
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-			$html = curl_exec($ch);
-			curl_close($ch);
-
-			$saw = new nokogiri($html);
+			$saw = new nokogiri($this->curl($url));
 
 			if ($limit >= $page) {
 				// There are products in the category
@@ -257,17 +247,7 @@ class ControllerModulePvnmParser extends Controller {
 					$product_image = array();
 					$product_attribute = array();
 
-					$ch = curl_init();
-					curl_setopt($ch, CURLOPT_URL, $product['url']);
-					curl_setopt($ch, CURLOPT_POST, 0);
-					curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-					curl_setopt($ch, CURLOPT_HEADER, 0);
-					curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.8');
-					curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-					$html = curl_exec($ch);
-					curl_close($ch);
-
-					$saw = new nokogiri($html);
+					$saw = new nokogiri($this->curl($product['url']));
 
 					$product_name = $saw->get('.js-product-heading span')->toArray();
 
@@ -387,17 +367,7 @@ recommended that you rely on product packaging or manufacturer information. </p>
 					$product_description_extended = $saw->get('.js-marketing-content-iframe')->toArray();
 
 					if (isset($product_description_extended[0]['src']) && !empty($product_description_extended[0]['src'])) {
-						$ch = curl_init();
-						curl_setopt($ch, CURLOPT_URL, 'https:' . $product_description_extended[0]['src']);
-						curl_setopt($ch, CURLOPT_POST, 0);
-						curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-						curl_setopt($ch, CURLOPT_HEADER, 0);
-						curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.8');
-						curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-						$html = curl_exec($ch);
-						curl_close($ch);
-
-						$saw = new nokogiri($html);
+						$saw = new nokogiri($this->curl('https:' . $product_description_extended[0]['src']));
 
 						$product_description_extended = $saw->get('#wc-reset')->toXml();
 						
@@ -588,6 +558,27 @@ recommended that you rely on product packaging or manufacturer information. </p>
 		$this->response->setOutput(json_encode($json));
 	}
 
+	protected function validate() {
+		if (!$this->user->hasPermission('modify', 'module/pvnm_parser')) {
+			$this->error['warning'] = $this->language->get('error_permission');
+		}
+
+		return !$this->error;
+	}
+
+	protected function curl($url) {
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_POST, 0);
+		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$result = curl_exec($ch);
+		curl_close($ch);
+
+		return $result;
+	}
+
 	protected function translit($str) {
 		$replace = array(
 			"А"=>"a",       "а"=>"a",       " "=>"_",
@@ -631,24 +622,16 @@ recommended that you rely on product packaging or manufacturer information. </p>
 		return strtr($new_str, $replace);
 	}
 
-	protected function validate() {
-		if (!$this->user->hasPermission('modify', 'module/pvnm_parser')) {
-			$this->error['warning'] = $this->language->get('error_permission');
-		}
+	public function truncate() {
+		$this->load->model('module/pvnm_parser');
 
-		return !$this->error;
+		$this->model_module_pvnm_parser->truncate();
 	}
 
 	public function install() {
 		$this->load->model('module/pvnm_parser');
 
 		$this->model_module_pvnm_parser->install();
-	}
-
-	public function truncate() {
-		$this->load->model('module/pvnm_parser');
-
-		$this->model_module_pvnm_parser->truncate();
 	}
 
 	public function uninstall() {
