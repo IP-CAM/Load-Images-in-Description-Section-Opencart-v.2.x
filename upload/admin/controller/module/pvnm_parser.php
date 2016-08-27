@@ -277,10 +277,12 @@ class ControllerModulePvnmParser extends Controller {
 
 					$product_description = $saw->get('.product-about .js-ellipsis')->toXml();
 
-					preg_match_all('#<root>(.+?)</root>#is', $product_description, $description);
+					preg_match_all('#<root><div class="js-ellipsis module" data-max-height="350"> <p class="product-description-disclaimer"> <b>Important Made in USA Origin Disclaimer:</b> For certain items sold by Walmart on Walmart.com, the displayed country of origin
+information may not be accurate or consistent with manufacturer information. For updated, accurate country of origin data, it is
+recommended that you rely on product packaging or manufacturer information. </p>(.+?)</div></root>#is', $product_description, $description);
 
 					if (isset($description[1][0])) {
-						$description = $description[1][0];
+						$description = preg_replace('/<a(.*)>|<\/a>/iU', '', $description[1][0]);
 					}
 
 					$product_price = $saw->get('.js-price-display')->toArray();
