@@ -279,11 +279,15 @@ class ControllerModulePvnmParser extends Controller {
 
 					preg_match_all('#<root><div class="js-ellipsis module" data-max-height="350"> <p class="product-description-disclaimer"> <b>Important Made in USA Origin Disclaimer:</b> For certain items sold by Walmart on Walmart.com, the displayed country of origin
 information may not be accurate or consistent with manufacturer information. For updated, accurate country of origin data, it is
-recommended that you rely on product packaging or manufacturer information. </p>(.+?)</div></root>#is', $product_description, $description);
+recommended that you rely on product packaging or manufacturer information. </p>(.+?)</div></root>#is', $product_description, $product_description);
 
-					if (isset($description[1][0])) {
-						$description = preg_replace('/<a(.*)>|<\/a>/iU', '', $description[1][0]);
+					if (isset($product_description[1][0])) {
+						$description .= preg_replace('/<a(.*)>|<\/a>/iU', '', $product_description[1][0]);
 					}
+
+					//if (isset($product_description_extended[1][0])) {
+					//	$description .= preg_replace('/<a(.*)>|<\/a>/iU', '', $product_description_extended[1][0]);
+					//}
 
 					$product_price = $saw->get('.js-price-display')->toArray();
 
@@ -378,6 +382,30 @@ recommended that you rely on product packaging or manufacturer information. </p>
 
 						// Add attributes with values to temporary product
 						$product_attribute[$key]['product_attribute_description'][$this->config->get('config_language_id')]['text'] = $link['#text'][0];
+					}
+
+					$product_description_extended = $saw->get('.js-marketing-content-iframe')->toArray();
+
+					if (isset($product_description_extended[0]['src']) && !empty($product_description_extended[0]['src'])) {
+						$ch = curl_init();
+						curl_setopt($ch, CURLOPT_URL, 'https:' . $product_description_extended[0]['src']);
+						curl_setopt($ch, CURLOPT_POST, 0);
+						curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+						curl_setopt($ch, CURLOPT_HEADER, 0);
+						curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.9.0.8) Gecko/2009032609 Firefox/3.0.8');
+						curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+						$html = curl_exec($ch);
+						curl_close($ch);
+
+						$saw = new nokogiri($html);
+
+						$product_description_extended = $saw->get('#wc-reset')->toXml();
+						
+						preg_match_all('#<root><div id="wc-reset">(.+?)</div></root>#is', $product_description_extended, $product_description_extended);
+
+						if (isset($product_description_extended[1][0])) {
+							$description .= preg_replace('/<a(.*)>|<\/a>/iU', '', $product_description_extended[1][0]);
+						}
 					}
 
 					if (isset($name)) {
