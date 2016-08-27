@@ -102,8 +102,8 @@ class ControllerModulePvnmParser extends Controller {
 		}
 
 		$filter_data = array(
-			'sort'	=> 'sort_order',
-			'order'	=> 'ASC'
+			'sort'  => 'sort_order',
+			'order' => 'ASC'
 		);
 
 		$data['token'] = $this->session->data['token'];
@@ -226,24 +226,24 @@ class ControllerModulePvnmParser extends Controller {
 			$attribute_group_id = $categories[$next]['attribute_group_id'];
 
 			$filter_data = array(
-				'filter_category_id'	=> $category_id,
-				'filter_status'			=> 1
+				'filter_category_id' => $category_id,
+				'filter_status'      => 1
 			);
 
 			$category_parse_products = $this->model_module_pvnm_parser->getTotalProduct($filter_data);
 
 			$filter_data = array(
-				'filter_category_id'	=> $category_id,
-				'filter_status'			=> 0
+				'filter_category_id' => $category_id,
+				'filter_status'      => 0
 			);
 
 			$category_found_products = $this->model_module_pvnm_parser->getTotalProduct($filter_data);
 
 			if ($limit > $category_parse_products && $category_found_products > 0) {
 				$filter_data = array(
-					'filter_category_id'	=> $category_id,
-					'filter_status'			=> 0,
-					'limit'					=> 1
+					'filter_category_id' => $category_id,
+					'filter_status'      => 0,
+					'limit'              => 1
 				);
 
 				$found_products = $this->model_module_pvnm_parser->getFoundProduct($filter_data);
@@ -269,31 +269,36 @@ class ControllerModulePvnmParser extends Controller {
 
 					$saw = new nokogiri($html);
 
-					$name = $saw->get('.js-product-heading span')->toArray();
+					$product_name = $saw->get('.js-product-heading span')->toArray();
 
-					$desc = $saw->get('.product-about .js-ellipsis')->toXml();
-					preg_match_all('#<root>(.+?)</root>#is', $desc, $description);
+					if (isset($product_name[0]['#text'][0])) {
+						$name = trim(str_replace('"', '&quot;', $product_name[0]['#text'][0]));
+					}
+
+					$product_description = $saw->get('.product-about .js-ellipsis')->toXml();
+
+					preg_match_all('#<root>(.+?)</root>#is', $product_description, $description);
 
 					if (isset($description[1][0])) {
 						$description = $description[1][0];
 					}
 
-					$price = $saw->get('.js-price-display')->toArray();
+					$product_price = $saw->get('.js-price-display')->toArray();
 
-					if (isset($price[0]['#text'][1])) {
-						$price = $price[0]['#text'][1];
+					if (isset($product_price[0]['#text'][1])) {
+						$price = $product_price[0]['#text'][1];
 					}
 
-					$manufacturer = $saw->get('#WMItemBrandLnk span')->toArray();
+					$product_manufacturer = $saw->get('#WMItemBrandLnk span')->toArray();
 
 					// Add manufacturer to temporary product
-					if (isset($manufacturer[0]['#text'][0])) {
-						$manufacturer = trim($manufacturer[0]['#text'][0]);
+					if (isset($product_manufacturer[0]['#text'][0])) {
+						$product_manufacturer = trim($product_manufacturer[0]['#text'][0]);
 
 						$filter_data = array(
-							'filter_name'					=> $manufacturer,
-							'start'							=> 0,
-							'limit'							=> 1
+							'filter_name' => $product_manufacturer,
+							'start'       => 0,
+							'limit'       => 1
 						);
 
 						// Serching manufacturer in database
@@ -303,10 +308,10 @@ class ControllerModulePvnmParser extends Controller {
 							$manufacturer_id = $manufacturers[0]['manufacturer_id'];
 						} else {
 							$manufacturer_data = array(
-								'name'					=> $manufacturer,
-								'sort_order'			=> '',
-								'manufacturer_store'	=> array(0),
-								'keyword'				=> $this->translit(mb_strtolower($manufacturer))
+								'name'               => $product_manufacturer,
+								'sort_order'         => '',
+								'manufacturer_store' => array(0),
+								'keyword'            => $this->translit(mb_strtolower($product_manufacturer))
 							);
 
 							// Add manufacturer to opencart
@@ -314,12 +319,12 @@ class ControllerModulePvnmParser extends Controller {
 						}
 					}
 
-					$image = $saw->get('.js-product-primary-image')->toArray();
+					$product_image = $saw->get('.js-product-primary-image')->toArray();
 
-					if (isset($image[0]['data-zoom-image']) && !empty($image[0]['data-zoom-image'])) {
-						$image = $image[0]['data-zoom-image'];
-					} elseif (isset($image[0]['src']) && !empty($image[0]['src'])) {
-						$image = mb_substr($image[0]['src'], 0, strpos($image[0]['src'], '?odnHeight'));
+					if (isset($product_image[0]['data-zoom-image']) && !empty($product_image[0]['data-zoom-image'])) {
+						$image = $product_image[0]['data-zoom-image'];
+					} elseif (isset($product_image[0]['src']) && !empty($product_image[0]['src'])) {
+						$image = mb_substr($product_image[0]['src'], 0, strpos($product_image[0]['src'], '?odnHeight'));
 					}
 
 					//foreach ($saw->get('.js-product-thumb') as $key => $link) {
@@ -334,10 +339,10 @@ class ControllerModulePvnmParser extends Controller {
 						$attribute_description[$this->config->get('config_language_id')]['name'] = $link['#text'][0];
 
 						$filter_data = array(
-							'filter_name'					=> $link['#text'][0],
-							'filter_attribute_group_id'		=> $attribute_group_id,
-							'start'							=> 0,
-							'limit'							=> 1
+							'filter_name'               => $link['#text'][0],
+							'filter_attribute_group_id' => $attribute_group_id,
+							'start'                     => 0,
+							'limit'                     => 1
 						);
 
 						// Serching attribute in database
@@ -347,9 +352,9 @@ class ControllerModulePvnmParser extends Controller {
 							$attribute_id = $attributes[0]['attribute_id'];
 						} else {
 							$attribute_data = array(
-								'attribute_description'	=> $attribute_description,
-								'attribute_group_id'	=> $attribute_group_id,
-								'sort_order'			=> ''
+								'attribute_description' => $attribute_description,
+								'attribute_group_id'    => $attribute_group_id,
+								'sort_order'            => ''
 							);
 
 							// Add attributes to opencart
@@ -357,7 +362,7 @@ class ControllerModulePvnmParser extends Controller {
 						}
 
 						$product_attribute[$key] = array(
-							'attribute_id'	=> $attribute_id
+							'attribute_id' => $attribute_id
 						);
 					}
 
@@ -373,17 +378,17 @@ class ControllerModulePvnmParser extends Controller {
 						$product_attribute[$key]['product_attribute_description'][$this->config->get('config_language_id')]['text'] = $link['#text'][0];
 					}
 
-					if ($name) {
+					if (isset($name)) {
 						$product_data = array(
-							'product_id'		=> $product['product_id'],
-							'model'				=> $model,
-							'manufacturer_id'	=> $manufacturer_id,
-							'price'				=> $price,
-							'image'				=> $image,
-							'name'				=> trim(str_replace('"', '&quot;', $name[0]['#text'][0])),
-							'description'		=> $description,
-							'product_image'		=> $product_image,
-							'product_attribute'	=> $product_attribute
+							'product_id'        => $product['product_id'],
+							'model'             => $model,
+							'manufacturer_id'   => $manufacturer_id,
+							'price'             => $price,
+							'image'             => $image,
+							'name'              => $name,
+							'description'       => $description,
+							'product_image'     => $product_image,
+							'product_attribute' => $product_attribute
 						);
 
 						// Add parse values to temporary product
@@ -407,7 +412,7 @@ class ControllerModulePvnmParser extends Controller {
 			}
 
 			$filter_data = array(
-				'filter_status'	=> 1
+				'filter_status' => 1
 			);
 
 			$total_parse_products = $this->model_module_pvnm_parser->getTotalProduct($filter_data);
@@ -435,8 +440,8 @@ class ControllerModulePvnmParser extends Controller {
 			$next = $this->request->post['next'];
 
 			$filter_data = array(
-				'filter_status'	=> 1,
-				'limit'			=> 1
+				'filter_status' => 1,
+				'limit'         => 1
 			);
 
 			$load_products = $this->model_module_pvnm_parser->getFoundProduct($filter_data);
@@ -472,48 +477,49 @@ class ControllerModulePvnmParser extends Controller {
 					}
 
 					$product_description[$this->config->get('config_language_id')] = array(
-						'name'				=> $product['name'],
-						'description'		=> $product['description'],
-						'tag'				=> '',
-						'meta_title'		=> $product['name'],
-						'meta_description'	=> '',
-						'meta_keyword'		=> ''
+						'name'             => $product['name'],
+						'description'      => $product['description'],
+						'tag'              => '',
+						'meta_title'       => $product['name'],
+						'meta_description' => '',
+						'meta_keyword'     => ''
 					);
 
 					$product_attributes = $this->model_module_pvnm_parser->getProductAttributes($product['product_id']);
 
 					$product_data = array(
-						'model'					=> $product['model'], 
-						'sku'					=> '',
-						'upc'					=> '',
-						'ean'					=> '',
-						'jan'					=> '',
-						'isbn'					=> '',
-						'mpn'					=> '',
-						'location'				=> '',
-						'quantity'				=> 100,
-						'minimum'				=> 1,
-						'subtract'				=> 1,
-						'stock_status_id'		=> 5,
-						'date_available'		=> date('Y-m-d'),
-						'manufacturer_id'		=> $product['manufacturer_id'], 
-						'shipping'				=> 1,
-						'price'					=> $product['price'],
-						'points'				=> 0,
-						'weight'				=> 0,
-						'weight_class_id'		=> 1,
-						'length'				=> 0,
-						'width'					=> 0,
-						'height'				=> 0,
-						'length_class_id'		=> 1,
-						'status'				=> 1,
-						'tax_class_id'			=> 0,
-						'sort_order'			=> 0,
-						'image'					=> $image,
-						'product_description'	=> $product_description,
-						'product_store'			=> array(0),
-						'product_attribute'		=> $product_attributes,
-						'product_category'		=> array($product['category_id'])
+						'model'               => $product['model'], 
+						'sku'                 => '',
+						'upc'                 => '',
+						'ean'                 => '',
+						'jan'                 => '',
+						'isbn'                => '',
+						'mpn'                 => '',
+						'location'            => '',
+						'quantity'            => 100,
+						'minimum'             => 1,
+						'subtract'            => 1,
+						'stock_status_id'     => 5,
+						'date_available'      => date('Y-m-d'),
+						'manufacturer_id'     => $product['manufacturer_id'], 
+						'shipping'            => 1,
+						'price'               => $product['price'],
+						'points'              => 0,
+						'weight'              => 0,
+						'weight_class_id'     => 1,
+						'length'              => 0,
+						'width'               => 0,
+						'height'              => 0,
+						'length_class_id'     => 1,
+						'status'              => 1,
+						'tax_class_id'        => 0,
+						'sort_order'          => 0,
+						'image'               => $image,
+						'product_description' => $product_description,
+						'product_store'       => array(0),
+						'product_attribute'   => $product_attributes,
+						'product_category'    => array($product['category_id']),
+						'keyword'             => $this->translit(mb_strtolower($product['name']))
 					);
 
 					// Add product to opencart
@@ -525,7 +531,7 @@ class ControllerModulePvnmParser extends Controller {
 				$json['next'] = $next;
 
 				$filter_data = array(
-					'filter_status'	=> 2
+					'filter_status' => 2
 				);
 
 				$total_load_products = $this->model_module_pvnm_parser->getTotalProduct($filter_data);
@@ -537,7 +543,7 @@ class ControllerModulePvnmParser extends Controller {
 				unset($next);
 
 				$filter_data = array(
-					'filter_status'	=> 2
+					'filter_status' => 2
 				);
 
 				$total_load_products = $this->model_module_pvnm_parser->getTotalProduct($filter_data);
@@ -554,40 +560,40 @@ class ControllerModulePvnmParser extends Controller {
 
 	protected function translit($str) {
 		$replace = array(
-			"А"=>"a",			"а"=>"a",			" "=>"_",
-			"Б"=>"b",			"б"=>"b",			"."=>"_",
-			"В"=>"v",			"в"=>"v",			"/"=>"_",
-			"Г"=>"g",			"г"=>"g",			","=>"_",
-			"Д"=>"d",			"д"=>"d",			"-"=>"_",
-			"Е"=>"e",			"е"=>"e",			"("=>"_",
-			"Ё"=>"e",			"ё"=>"e",			")"=>"_",
-			"Ж"=>"j",			"ж"=>"j",			"["=>"_",
-			"З"=>"z",			"з"=>"z",			"]"=>"_",
-			"И"=>"i",			"и"=>"i",			"="=>"_",
-			"Й"=>"y",			"й"=>"y",			"+"=>"_",
-			"К"=>"k",			"к"=>"k",			"*"=>"_",
-			"Л"=>"l",			"л"=>"l",			"?"=>"_",
-			"М"=>"m",			"м"=>"m",			"\""=>"_",
-			"Н"=>"n",			"н"=>"n",			"'"=>"_",
-			"О"=>"o",			"о"=>"o",			"&"=>"_",
-			"П"=>"p",			"п"=>"p",			"%"=>"_",
-			"Р"=>"r",			"р"=>"r",			"#"=>"_",
-			"С"=>"s",			"с"=>"s",			"@"=>"_",
-			"Т"=>"t",			"т"=>"t",			"!"=>"_",
-			"У"=>"u",			"у"=>"u",			";"=>"_",
-			"Ф"=>"f",			"ф"=>"f",			"№"=>"_",
-			"Х"=>"h",			"х"=>"h",			"^"=>"_",
-			"Ц"=>"ts",			"ц"=>"ts",			":"=>"_",
-			"Ч"=>"ch",			"ч"=>"ch",			"~"=>"_",
-			"Ш"=>"sh",			"ш"=>"sh",			"\\"=>"_",
-			"Щ"=>"sch",			"щ"=>"sch",			"Ґ"=>"G",
-			"Ъ"=>"",			"ъ"=>"y",			"є"=>"e",
-			"Ы"=>"i",			"ы"=>"i",			"Є"=>"E",
-			"Ь"=>"j",			"ь"=>"j",			"і"=>"i",
-			"Э"=>"e",			"э"=>"e",			"І"=>"I",
-			"Ю"=>"yu",			"ю"=>"yu",			"ї"=>"i",
-			"Я"=>"ya",			"я"=>"ya",			"Ї"=>"I",
-			"$"=>"_",			"&amp;"=>"_",		"__"=>"_"
+			"А"=>"a",       "а"=>"a",       " "=>"_",
+			"Б"=>"b",       "б"=>"b",       "."=>"_",
+			"В"=>"v",       "в"=>"v",       "/"=>"_",
+			"Г"=>"g",       "г"=>"g",       ","=>"_",
+			"Д"=>"d",       "д"=>"d",       "-"=>"_",
+			"Е"=>"e",       "е"=>"e",       "("=>"_",
+			"Ё"=>"e",       "ё"=>"e",       ")"=>"_",
+			"Ж"=>"j",       "ж"=>"j",       "["=>"_",
+			"З"=>"z",       "з"=>"z",       "]"=>"_",
+			"И"=>"i",       "и"=>"i",       "="=>"_",
+			"Й"=>"y",       "й"=>"y",       "+"=>"_",
+			"К"=>"k",       "к"=>"k",       "*"=>"_",
+			"Л"=>"l",       "л"=>"l",       "?"=>"_",
+			"М"=>"m",       "м"=>"m",       "\""=>"_",
+			"Н"=>"n",       "н"=>"n",       "'"=>"_",
+			"О"=>"o",       "о"=>"o",       "&"=>"_",
+			"П"=>"p",       "п"=>"p",       "%"=>"_",
+			"Р"=>"r",       "р"=>"r",       "#"=>"_",
+			"С"=>"s",       "с"=>"s",       "@"=>"_",
+			"Т"=>"t",       "т"=>"t",       "!"=>"_",
+			"У"=>"u",       "у"=>"u",       ";"=>"_",
+			"Ф"=>"f",       "ф"=>"f",       "№"=>"_",
+			"Х"=>"h",       "х"=>"h",       "^"=>"_",
+			"Ц"=>"ts",      "ц"=>"ts",      ":"=>"_",
+			"Ч"=>"ch",      "ч"=>"ch",      "~"=>"_",
+			"Ш"=>"sh",      "ш"=>"sh",      "\\"=>"_",
+			"Щ"=>"sch",     "щ"=>"sch",     "Ґ"=>"G",
+			"Ъ"=>"",        "ъ"=>"y",       "є"=>"e",
+			"Ы"=>"i",       "ы"=>"i",       "Є"=>"E",
+			"Ь"=>"j",       "ь"=>"j",       "і"=>"i",
+			"Э"=>"e",       "э"=>"e",       "І"=>"I",
+			"Ю"=>"yu",      "ю"=>"yu",      "ї"=>"i",
+			"Я"=>"ya",      "я"=>"ya",      "Ї"=>"I",
+			"$"=>"_",       "&amp;"=>"_",   "__"=>"_"
 		);
 
 		$new_str = strtr($str, $replace);
