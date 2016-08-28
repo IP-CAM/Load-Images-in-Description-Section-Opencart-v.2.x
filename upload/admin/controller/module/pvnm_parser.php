@@ -142,7 +142,7 @@ class ControllerModulePvnmParser extends Controller {
 				$url = $categories[$next]['url'] . '&page=' . $page ;
 			}
 
-			$saw = new nokogiri($this->curl($url));
+			$saw = nokogiri::fromHtmlNoCharset($this->curl($url));
 
 			if ($limit >= $page) {
 				// There are products in the category
@@ -247,7 +247,7 @@ class ControllerModulePvnmParser extends Controller {
 					$product_image = array();
 					$product_attribute = array();
 
-					$saw = new nokogiri($this->curl($product['url']));
+					$saw = nokogiri::fromHtmlNoCharset($this->curl($product['url']));
 
 					$product_name = $saw->get('.js-product-heading span')->toArray();
 
@@ -367,7 +367,7 @@ recommended that you rely on product packaging or manufacturer information. </p>
 					$product_description_extended = $saw->get('.js-marketing-content-iframe')->toArray();
 
 					if (isset($product_description_extended[0]['src']) && !empty($product_description_extended[0]['src'])) {
-						$saw = new nokogiri($this->curl('https:' . $product_description_extended[0]['src']));
+						$saw = nokogiri::fromHtmlNoCharset($this->curl('https:' . $product_description_extended[0]['src']));
 
 						$product_description_extended = $saw->get('#wc-reset')->toXml();
 
