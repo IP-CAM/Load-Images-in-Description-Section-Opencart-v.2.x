@@ -461,18 +461,19 @@ recommended that you rely on product packaging or manufacturer information. </p>
 
 			if (count($load_products) > 0) {
 				foreach ($load_products as $product) {
+					// Create product images folder
+					if (!is_dir(DIR_IMAGE . 'catalog/pvnm_parser')) {
+						mkdir(DIR_IMAGE . 'catalog/pvnm_parser', 0700);
+					}
+
+					$pre_url = 'catalog/pvnm_parser/' . mb_substr($this->translit($product['name']), 0, 100) . '/';
+
+					if (!is_dir(DIR_IMAGE . $pre_url)) {
+						mkdir(DIR_IMAGE . $pre_url, 0700);
+					}
+
 					// Load images to opencart
 					if (isset($product['image']) && $product['image'] != '') {
-						if (!is_dir(DIR_IMAGE . 'catalog/pvnm_parser')) {
-							mkdir(DIR_IMAGE . 'catalog/pvnm_parser', 0700);
-						}
-
-						$pre_url = 'catalog/pvnm_parser/' . mb_substr($this->translit($product['name']), 0, 100) . '/';
-
-						if (!is_dir(DIR_IMAGE . $pre_url)) {
-							mkdir(DIR_IMAGE . $pre_url, 0700);
-						}
-
 						$imagefile = file_get_contents($product['image']);
 						$imagetype = substr(strrchr(basename(html_entity_decode($product['image'], ENT_QUOTES, 'UTF-8')), '.'), 1);
 						$imagename = $this->translit(basename(html_entity_decode($product['image'], ENT_QUOTES, 'UTF-8'), '.' . $imagetype));
@@ -487,6 +488,29 @@ recommended that you rely on product packaging or manufacturer information. </p>
 						}
 					} else {
 						$image = '';
+					}
+
+					// Loading images of the description
+					if ($product['description'] != '') {
+						preg_match_all('#src="([^"]+)"#i', $product['description'], $description_images);
+
+						if (isset($description_images[1]) && count($description_images[1]) > 0) {
+							foreach ($description_images[1] as $desc_image) {
+								$imagefile = file_get_contents($desc_image);
+								$imagetype = substr(strrchr(basename(html_entity_decode($desc_image, ENT_QUOTES, 'UTF-8')), '.'), 1);
+								$imagename = $this->translit(basename(html_entity_decode($desc_image, ENT_QUOTES, 'UTF-8'), '.' . $imagetype));
+								$imageurl = $pre_url . $imagename . '.' . $imagetype;
+
+								if ($imagefile != false){
+									file_put_contents(DIR_IMAGE . $imageurl, $imagefile);
+								}
+
+								// Replace original image url to the new
+								if (file_exists(DIR_IMAGE . $imageurl)) {
+									$product['description'] = str_replace($desc_image, 'image/' . $imageurl, $product['description']);
+								}
+							}
+						}
 					}
 
 					$product_description[$this->config->get('config_language_id')] = array(
