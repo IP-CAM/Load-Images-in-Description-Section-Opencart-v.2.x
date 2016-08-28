@@ -370,8 +370,8 @@ recommended that you rely on product packaging or manufacturer information. </p>
 						$saw = new nokogiri($this->curl('https:' . $product_description_extended[0]['src']));
 
 						$product_description_extended = $saw->get('#wc-reset')->toXml();
-						
-						preg_match_all('#<root><div id="wc-reset">(.+?)</div></root>#is', $product_description_extended, $product_description_extended);
+
+						preg_match_all('#<root>(.+?)</root>#is', $product_description_extended, $product_description_extended);
 
 						if (isset($product_description_extended[1][0])) {
 							$description .= preg_replace('/<a(.*)>|<\/a>/iU', '', $product_description_extended[1][0]);
