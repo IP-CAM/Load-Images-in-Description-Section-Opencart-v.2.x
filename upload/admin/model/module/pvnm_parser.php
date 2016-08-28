@@ -7,6 +7,7 @@ class ModelModulePvnmParser extends Model {
 	public function updateFoundProduct($data = array()) {
 		$this->db->query("UPDATE " . DB_PREFIX . "pvnm_parser_product SET 
 			model = '" . $this->db->escape($data['model']) . "', 
+			quantity = '" . (int)$data['quantity'] . "', 
 			manufacturer_id = '" . (int)$data['manufacturer_id'] . "', 
 			price = '" . $this->db->escape($data['price']) . "', 
 			image = '" . $this->db->escape($data['image']) . "', 

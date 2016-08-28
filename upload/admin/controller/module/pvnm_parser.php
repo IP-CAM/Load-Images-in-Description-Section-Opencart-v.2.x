@@ -240,6 +240,7 @@ class ControllerModulePvnmParser extends Controller {
 
 				foreach ($found_products as $product) {
 					$model = '';
+					$quantity = 0;
 					$manufacturer_id = 0;
 					$price = 0;
 					$image = '';
@@ -255,12 +256,22 @@ class ControllerModulePvnmParser extends Controller {
 						$name = trim(str_replace('"', '&quot;', $product_name[0]['#text'][0]));
 					}
 
+					$product_quantity = $saw->get('#WMItemQtyDropDown')->toArray();
+
+					// Add quantity to temporary product
+					if (isset($product_quantity[0]['option']) && !empty($product_quantity[0]['option'])) {
+						$quantity = array_pop($product_quantity[0]['option']);
+
+						$quantity = $quantity['value'];
+					}
+
 					$product_description = $saw->get('.product-about .js-ellipsis')->toXml();
 
 					preg_match_all('#<root><div class="js-ellipsis module" data-max-height="350"> <p class="product-description-disclaimer"> <b>Important Made in USA Origin Disclaimer:</b> For certain items sold by Walmart on Walmart.com, the displayed country of origin
 information may not be accurate or consistent with manufacturer information. For updated, accurate country of origin data, it is
 recommended that you rely on product packaging or manufacturer information. </p>(.+?)</div></root>#is', $product_description, $product_description);
 
+					// Add description to temporary product
 					if (isset($product_description[1][0])) {
 						$description .= preg_replace('/<a(.*)>|<\/a>/iU', '', $product_description[1][0]);
 					}
@@ -271,6 +282,7 @@ recommended that you rely on product packaging or manufacturer information. </p>
 
 					$product_price = $saw->get('.js-price-display')->toArray();
 
+					// Add price to temporary product
 					if (isset($product_price[0]['#text'][1])) {
 						$price = $product_price[0]['#text'][1];
 					}
@@ -382,6 +394,7 @@ recommended that you rely on product packaging or manufacturer information. </p>
 						$product_data = array(
 							'product_id'        => $product['product_id'],
 							'model'             => $model,
+							'quantity'          => $quantity,
 							'manufacturer_id'   => $manufacturer_id,
 							'price'             => $price,
 							'image'             => $image,
@@ -496,7 +509,7 @@ recommended that you rely on product packaging or manufacturer information. </p>
 						'isbn'                => '',
 						'mpn'                 => '',
 						'location'            => '',
-						'quantity'            => 100,
+						'quantity'            => $product['quantity'],
 						'minimum'             => 1,
 						'subtract'            => 1,
 						'stock_status_id'     => 5,
