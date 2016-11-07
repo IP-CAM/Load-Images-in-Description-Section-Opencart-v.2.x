@@ -1,1 +1,1 @@
-<img src="https://avatars1.githubusercontent.com/u/19241364" width="1" height="1">
+<img src="http://api.rees46.com/marker/prestashop" width="1" height="1">
